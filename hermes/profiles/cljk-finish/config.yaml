@@ -105,7 +105,7 @@ plugins:
         zap_proxy_targets:
           - allow_active: false
             url: http://127.0.0.1:8765
-_config_version: 45
+_config_version: 46
 mcp_servers:
   cloudflare:
     url: https://mcp.cloudflare.com/mcp?codemode=false
@@ -156,3 +156,5 @@ provider_routing:
 cron:
   bot_chat_delivery_timeout_seconds: 900
   max_parallel_jobs: 12
+gateway:
+  cron_only: true
