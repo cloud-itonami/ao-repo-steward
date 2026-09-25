@@ -1,5 +1,5 @@
 # Host-local blocks (command_allowlist, onboarding, secrets, skills, terminal) are kept on the host and omitted here.
-_config_version: 45
+_config_version: 46
 agent:
   max_turns: 500
   run_budget_seconds: 600
@@ -114,3 +114,5 @@ web:
 cron:
   bot_chat_delivery_timeout_seconds: 900
   max_parallel_jobs: 12
+gateway:
+  cron_only: true
