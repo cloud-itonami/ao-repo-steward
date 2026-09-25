@@ -24,7 +24,7 @@
       "script": "pr_queue_scan.py",
       "skill": null,
       "skills": [],
-      "workdir": "~/.hermes/profiles/kotoba-merger"
+      "workdir": null
     }
   ]
 }
