@@ -92,6 +92,9 @@ openrouter:
   response_cache: true
   response_cache_ttl: 300
 fallback_providers:
+  - provider: murakumo
+    model: mishima
+    base_url: https://api.murakumo.cloud/v1
   - provider: openrouter-free
     model: z-ai/glm-5.3-flash
     base_url: https://openrouter.ai/api/v1
