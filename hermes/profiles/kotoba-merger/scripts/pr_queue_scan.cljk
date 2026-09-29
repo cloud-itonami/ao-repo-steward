@@ -6,7 +6,7 @@
 ;; discovering state -- the failure that left 146 of our own PRs open on
 ;; 2026-09-05 while the drain jobs were being killed mid-discovery.
 ;;
-;; Evidence floor (CLAUDE.md, ADR-2608136000): a query that could not run is
+;; Evidence floor (AGENTS.md, ADR-2608136000): a query that could not run is
 ;; never reported as an empty queue. Any failed query -> exit 2 (neither pass
 ;; nor fail: "could not answer"), and the refusal names what failed.
 ;;

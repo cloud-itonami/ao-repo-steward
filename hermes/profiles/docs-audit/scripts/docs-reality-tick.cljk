@@ -61,7 +61,7 @@
 ;; ---------- 4. AGENTS.md 生成不変条件 ----------
 (let [r (sh "nbb" ["scripts/gen-agents-md.cljs" "--check"])]
   (println (str "\nAGENTS-MD\texit=" (:code r)
-                (case (:code r) 0 " (CLAUDE.md と一致)" 1 " (STALE — 再生成が要る)"
+                (case (:code r) 0 " (AGENTS.md と一致)" 1 " (STALE — 再生成が要る)"
                                 " (REFUSED — 置換表が source と食い違った)"))))
 
 (println "\n=== end tick ===")
