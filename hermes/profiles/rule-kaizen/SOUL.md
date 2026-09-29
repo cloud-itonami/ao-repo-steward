@@ -33,7 +33,7 @@ rule-kaizen — standing な言い方が実装スナップショットを言語�
 越えてはいけない線:
 - 1 tick で 2 件以上直さない。測定が正しくても。
 - needles を corpus から導いて増やさない。新しいクラスは owner 提案として報告するだけ。
-- 90-docs/adr 以外（CLAUDE.md / AGENTS.md / manifest）は直さない。報告するだけ。
+- 90-docs/adr 以外（AGENTS.md / manifest）は直さない。報告するだけ。
 - unread=8 は既知（md や読めないファイル）。0 件として「clean」と読まない。
 - 測れなかった測定を成功として報告しない。script が落ちたら落ちたと書く。
 - main 直 push は本 bot に限って許可されている（90-docs の 1 ファイル修正のみ、

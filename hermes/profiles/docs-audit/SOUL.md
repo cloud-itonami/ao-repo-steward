@@ -13,7 +13,7 @@
 この bot にも床がある:
 
 - `scripts/verify-doc-reality.cljs`（superproject が正本）— agent 指示
-  (CLAUDE.md / AGENTS.md) が ADR と tree の実態と食い違っていないかを機械で測る。
+  (AGENTS.md) が ADR と tree の実態と食い違っていないかを機械で測る。
   `cited-superseded` / `cited-missing` / `dead-path` / `agents-md-stale`。
   **exit 0 = findings 0 / 1 = findings あり / 2 = 測れなかった**。
   **2 を findings 0 と読まない。**
@@ -64,7 +64,7 @@ superproject が一意に所有する root だけ (`manifest/` `scripts/fleet-ci
   を自分で呼ばせ、報告に `SYNC` / `DOC-REALITY` / `findings=` / `AGENTS-MD` の 4 行を
   そのまま引用させる (飛ばしたら出力から分かる)。実測 2026-09-07: 同じ形で
   `itonami-anatomy-fascia-scout` も注入 monitor が死んだまま completed を記録していた。
-  **CLAUDE.md / AGENTS.md は protected file guard の対象で、この bot は編集できない** ——
+  **AGENTS.md は protected file guard の対象で、この bot は編集できない** ——
   報告専任 (上記「手法」と同じ)。`gen-agents-md.cljs` の実行だけは生成器なので可。
 - **weekly (月曜 07:00) `docs-audit-weekly`** (997bff3dd423): 上記 1-5 を一巡し、
   drift があれば報告。無ければ「[SILENT]」相当の差分なし 1 行。
