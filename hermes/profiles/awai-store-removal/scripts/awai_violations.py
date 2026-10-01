@@ -2,11 +2,19 @@
 """Evidence script for awai-store-removal bot.
 Runs verify-awai-state-store-policy.cljk, prints MEASURE lines + next-work pick.
 Read-only: never mutates git state. Exits 2 when measurement itself failed."""
-import json, os, subprocess, sys, datetime
+import json, os, subprocess, sys, datetime, re
 
-ROOT = "~/github/com-junkawasaki"
+# 2026-10-02: superproject checkout moved to root/ (top-level layout is a stale
+# leftover: .git replaced by a git-annex stub dir, orgs/ nearly empty). Scanning
+# the old root gave SCANNED 1 / false ALL-CLEAN. Real superproject = <base>/root.
+ROOT = "~/github/com-junkawasaki/root"
 LEDGER = os.path.expanduser("~/.hermes/profiles/awai-store-removal/workspace/removal-ledger.jsonl")
 VERIFY = os.path.join(ROOT, "scripts/verify-awai-state-store-policy.cljk")
+
+# Worktree/scratch checkout dirs owned by other bots or one-off tasks are
+# violation-visible but not our landing targets. Exclude from PICK (keep in
+# violations_detail so the count stays honest).
+WORKTREE_RE = re.compile(r"(^|/)(\.worktrees/|[^/]*(-wt$|-wtx$|wtx/)|[^/]*-\d{8}(-[a-z0-9-]+)?$|[^/]*site-verify$)")
 
 def out(*a):
     print(*a)
@@ -44,8 +52,6 @@ def main():
     # design/mapped/started-incomplete rows do NOT clear a repo (2026-09-19:
     # script used rec.get("merge") which never exists -> every row counted as
     # landed -> false ALL-CLEAN while 9 real violations stood).
-    import re
-    done = {}
     done_land = {}
     if os.path.exists(LEDGER):
         with open(LEDGER) as f:
@@ -62,19 +68,22 @@ def main():
                             if isinstance(v, str) and re.fullmatch(r"[0-9a-f]{7,40}", v.strip()):
                                 sha = v.strip()
                                 break
-                        done[rec["repo"]] = sha or "?"
                         if sha:
                             done_land[rec["repo"]] = sha
                 except Exception:
                     pass
     out("MEASURE\tledger_landed\t%d" % len(done_land))
 
-    # next pick: violation whose repo has no merged landing row, skip archived manimani
+    # next pick: mainline violation (worktree/scratch dirs excluded from PICK)
+    # whose repo has no merged landing row, skip archived manimani
     picks = [k for k in sorted(violations)
-             if k not in done_land and "manimani/appview" not in k]
+             if "manimani" not in k and not WORKTREE_RE.search(k)
+             and not WORKTREE_RE.search(k)]
     if not picks:
-        out("STATUS\tALL-CLEAN\tno unlanded violation (archived repos excluded)")
-        return 0
+        out("STATUS\tNO-PICK\tunlanded violations exist but none is a mainline repo "
+            "(worktree-only or archived); real violations = %s" %
+            json.dumps(violations, ensure_ascii=False))
+        return 1
     next_repo = picks[0]
     out("PICK\t%s\t%s" % (next_repo, violations[next_repo]))
     out("MEASURE\tremaining\t%d" % len(picks))
