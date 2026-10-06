@@ -7,11 +7,11 @@
       "enabled": true,
       "enabled_toolsets": null,
       "id": "b726f90ddf5d",
-      "model": "murakumo/free",
+      "model": null,
       "name": "reviewer-tick",
       "no_agent": false,
       "prompt": "Review one open PR or recent unreviewed change in the workspace repos per your SOUL.md review discipline. Read yakuwari.edn first: you review and publish findings only — never merge, approve, commit, or push. One review per tick; report in the SOUL.md format. If nothing is unreviewed, say so in one line.",
-      "provider": "murakumo",
+      "provider": null,
       "schedule": {
         "kind": "cron",
         "expr": "34 */6 * * *",
