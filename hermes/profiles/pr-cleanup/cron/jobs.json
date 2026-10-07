@@ -22,7 +22,7 @@
       "skills": [
         "pr-queue-triage"
       ],
-      "workdir": "~/.hermes/profiles/pr-cleanup"
+      "workdir": null
     },
     {
       "base_url": "https://api.murakumo.cloud/v1",
