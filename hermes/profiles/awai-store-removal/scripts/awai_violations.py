@@ -74,11 +74,15 @@ def main():
                     pass
     out("MEASURE\tledger_landed\t%d" % len(done_land))
 
-    # next pick: mainline violation (worktree/scratch dirs excluded from PICK)
-    # whose repo has no merged landing row, skip archived manimani
+    if not violations:
+        out("STATUS\tALL-CLEAN\tno violation measured")
+        return 0
+
+    # next pick: mainline violation (worktree/scratch dirs excluded from PICK),
+    # skip archived manimani. The measured VIOLATION rows are authoritative;
+    # ledger_landed is reported only (a stale ledger must not hide a violation).
     picks = [k for k in sorted(violations)
-             if "manimani" not in k and not WORKTREE_RE.search(k)
-             and not WORKTREE_RE.search(k)]
+             if "manimani" not in k and not WORKTREE_RE.search(k)]
     if not picks:
         out("STATUS\tNO-PICK\tunlanded violations exist but none is a mainline repo "
             "(worktree-only or archived); real violations = %s" %
