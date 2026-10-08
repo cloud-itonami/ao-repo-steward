@@ -10,6 +10,9 @@ providers:
     base_url: https://api.murakumo.cloud/v1
     api_mode: chat_completions
     models:
+      mishima:
+        context_length: 131072
+        max_tokens: 1024
       nex-n2.5-mini-uncensored:
         context_length: 65536
         max_tokens: 8192
@@ -48,6 +51,9 @@ providers:
       qwen3.8-flash-next-whitehacker:
         context_length: 131072
 fallback_providers:
+  - provider: murakumo
+    model: mishima
+    base_url: https://api.murakumo.cloud/v1
   - provider: openrouter-free
     model: z-ai/glm-5.3-flash
     base_url: https://openrouter.ai/api/v1
@@ -105,7 +111,7 @@ plugins:
         zap_proxy_targets:
           - allow_active: false
             url: http://127.0.0.1:8765
-_config_version: 45
+_config_version: 46
 mcp_servers:
   cloudflare:
     url: https://mcp.cloudflare.com/mcp?codemode=false
@@ -156,3 +162,5 @@ provider_routing:
 cron:
   bot_chat_delivery_timeout_seconds: 900
   max_parallel_jobs: 12
+gateway:
+  cron_only: true
