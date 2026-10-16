@@ -47,7 +47,7 @@ ALLOW = {
         "ternary-uncensored.NCsszJ", "hermes-workspace", "sec-audit-work", "aiueos-work",
     },
     os.path.join(HOME, "github"): {
-        "cloud-itonami", "com-junkawasaki", "edu-mit-cybernetics-ja", "kotoba-lang", "network-awai",
+        "cloud-itonami", "com-junkawasaki", "edu-mit-cybernetics-ja", "kotoba-lang", "network-awai", "wt", "workspaces",
     },
     os.path.join(HOME, ".hermes"): {
         "config.yaml", ".env", "auth.json", "auth.lock", "SOUL.md", "channel_directory.json", "install_id",
