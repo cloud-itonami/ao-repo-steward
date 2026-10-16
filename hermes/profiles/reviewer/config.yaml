@@ -82,6 +82,6 @@ mcp_servers:
   github-forest:
     command: /opt/homebrew/bin/node
     args:
-    - ~/github/com-junkawasaki/west-manifest/scripts/forest-maintenance.mjs
+    - ${userHome}/github/com-junkawasaki/west-manifest/scripts/forest-maintenance.mjs
     - mcp
     lazy: true
