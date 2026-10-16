@@ -5,7 +5,7 @@ description: Use when running the hourly oppai.fans Producer tick.
 
 # oppai-producer hourly run
 
-Repo: /private/tmp/fans-oppai-ui/orgs/network-awai/fans-oppai (worktree; branch payments/dark-checkout). Receipts: ~/.local/state/oppai-producer/<YYYYMMDDTHHZ>/receipt.json. Read receipts FIRST; generated/submitting/uncertain block new generation; deployed does not.
+Repo: ~/github/network-awai/fans-oppai (create task worktrees under ~/github/wt/<agent-or-bot>/<task>). Receipts: ~/.local/state/oppai-producer/<YYYYMMDDTHHZ>/receipt.json. Read receipts FIRST; generated/submitting/uncertain block new generation; deployed does not.
 
 ## Steps
 1. `git status` + `git fetch origin`; read docs/support.md if unsure.
@@ -17,7 +17,7 @@ Repo: /private/tmp/fans-oppai-ui/orgs/network-awai/fans-oppai (worktree; branch 
 7. MCP `producer_publish` {hour, sha256, expected_version} → deployed+commit+version. Then `producer_verify_post` {hour} → require checks all true. Keep state=deployed; published needs real browser/public fetch (browser policy denies oppai.fans; do not bypass).
 
 ## Pitfalls
-- vision_analyze() uses the session LLM; with a text-only model (qwen3.8-27b-whitehacker) it fails 400 invalid-research-request. Workaround: review the PNG with free OpenRouter VL models (e.g. inclusionai/ling-3.0-flash-vl:free, nex-agi/nex-n2.5-pro:free, nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free) via a scripts_run/ python script posting the data:image/png;base64 URI to /chat/completions; free tier 429s often — cross-check with 2+ models. Quantify 'dark bar' claims with PIL row averages before rejecting (bottom ~15px soft ground gradient at avg 28-51 is natural, not UI).
+- Vision review must use the configured Murakumo vision route. If that route rejects the image or is unavailable, stop and report vision review as blocked; do not upload the image to another provider. Quantify 'dark bar' claims with PIL row averages before rejecting (bottom ~15px soft ground gradient at avg 28-51 is natural, not UI).
 - Shared-workflow race: while you vision-review, Codex may set the same-hour receipt generated→deployed (title/tags/commit/version appear). Your reject/review scripts must assert the expected state and skip on mismatch — never overwrite a deployed receipt; do not roll back the newer live release.
 - Fresh /private/tmp worktree has no node_modules and no sibling orgs/kotoba-lang → MCP publish fails 'Command failed: npm'. Fix once: symlink worktree node_modules -> main repo's; symlink <tmp>/orgs/kotoba-lang -> ~/github/com-junkawasaki/orgs/kotoba-lang (test classpath ../../kotoba-lang/*).
 - Cron blocks `python3 -c`, `node -e`, `npx wrangler`, execute_code. Write script files under scripts_run/ and run `python3 file.py`; wrangler via repo-local binary; parse JSON with read_file or jq.
