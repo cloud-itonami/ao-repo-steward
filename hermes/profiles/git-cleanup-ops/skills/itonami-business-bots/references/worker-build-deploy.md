@@ -32,7 +32,7 @@ node --test test/grok-bots-proxy.test.mjs test/grok-bots-model-alias.test.mjs \
 `required namespace "dynamics.xmile" is not available` from a `/tmp`
 worktree.
 
-✅ `git worktree add -B <branch> ../.wt-<name> origin/main`
+✅ `git worktree add -b <branch> ~/github/wt/<agent-or-bot>/<task> origin/main` — do not overwrite an existing branch; choose a fresh task name if it exists
 (resolves: `orgs/network-awai/.wt-<name>` is the same depth as the
 canonical checkout; plain-git worktrees inside the superproject tree are
 fine as long as no west commands run there)
