@@ -26,7 +26,7 @@ diagnostic を引用して記録する）。
 1. **worktree を切る**（共有 checkout は触らない）:
    ```bash
    cd <superproject>/orgs/net-kotobase/ipfs
-   git worktree add -b feat/<topic> ~/.itonami-fleet/worktrees/<repo>-<topic> origin/main
+   git worktree add -b feat/<topic> ~/github/wt/<agent-or-bot>/<task> origin/main
    cd ~/.itonami-fleet/worktrees/<repo>-<topic>
    ln -sfn <superproject>/orgs/net-kotobase/ipfs/node_modules node_modules
    mkdir -p out
