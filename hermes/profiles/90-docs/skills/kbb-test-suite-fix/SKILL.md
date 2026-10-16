@@ -119,9 +119,10 @@ part of the workflow, see step 4.
 2. Probe kbb capability set first (`clojure.edn`/`clojure.string`/
    `kotoba.lang.text` work; `slurp`, `Long/*`, `System/*`, `data.json`,
    `PersistentQueue` do not).
-3. Write adapters, batch-replace with python re, then require EVERY test ns
-   individually in a loop and COUNT fails before running the suite —
-   failures surface one at a time otherwise.
+3. Write adapters and batch-replace with python re, then require each test
+   namespace with sequential top-level forms (for example, one `(require 'test.foo)`
+   per line). Do not put requires in `doseq` or another loop: SCI/KBB can report
+   zero tests and assertions for that pattern.
 4. **Follow the cutover's renames in the test tree** — grep the test files
    for `.cljs` / `.clj"` / stale sibling names after a rename wave: tests
    probe files by literal path (self-description suites, emulator-availa-

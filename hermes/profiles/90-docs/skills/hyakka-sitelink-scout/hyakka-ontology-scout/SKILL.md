@@ -155,13 +155,12 @@ on the 2026-09-06 run.
   for ROR-like subjects (universities/ministries) domain organization, NOT
   company (same lesson as prop/funder/prop/recipient in the funding segment).
 
-## Worktree MUST live under ~/.gftd/worktrees (not /tmp)
+## Worktree layout under ~/github/wt
 
 `deps.edn` references `../../kotoba-lang/*` relative to the repo root. A
 linked worktree created in /tmp compiles fine with nbb but shadow-cljs dies:
 "The required namespace jiten.core is not available, it was required by
-hyakka/article.cljc". Create it under ~/.gftd/worktrees/ directly, or `git
-worktree move` it there, then symlink node_modules from the parent worktree.
+hyakka/article.cljc". Create it under `~/github/wt/90-docs/<task>/repos/network-awai/app-hyakka`. This nested repo layout keeps `../../kotoba-lang/*` resolving to the task-local `repos/kotoba-lang` sibling; create that sibling as a symlink to `~/github/kotoba-lang`, then symlink node_modules from the parent worktree.
 
 ## Patch tool fails on these files
 
@@ -192,10 +191,13 @@ your job is zero NEW ones, and the unfaceted-list delta is your repair proof.
 - `git checkout --detach origin/main` inside the shared hyakka-growth-bot
   worktree can be BLOCKED by a sibling bot's modified config
   ("local changes would be overwritten"). Never touch their files: create
-  your own worktree instead — `git -C hyakka-growth-bot worktree add
-  ~/.gftd/worktrees/hyakka-onto-<run> --detach origin/main` + `ln -sfn
-  .../hyakka-growth-bot/node_modules node_modules` inside it. Do the whole
-  run there.
+  your own task-local worktree instead. The relative dependency resolves through the `repos/kotoba-lang` sibling:
+  ```bash
+  mkdir -p ~/github/wt/90-docs/hyakka-onto-<run>/repos
+  ln -sfn ~/github/kotoba-lang ~/github/wt/90-docs/hyakka-onto-<run>/repos/kotoba-lang
+  git -C hyakka-growth-bot worktree add ~/github/wt/90-docs/hyakka-onto-<run>/repos/network-awai/app-hyakka --detach origin/main
+  ln -sfn .../hyakka-growth-bot/node_modules ~/github/wt/90-docs/hyakka-onto-<run>/repos/network-awai/app-hyakka/node_modules
+  ``` Run the whole run there.
 - process_manage `wait` on a background `npm test`: the timeout silently
   clamps to 180s and it can report "exited" while the run is still going.
   Trust only the log: grep for the exit marker (`CONTROL-EXIT:`/

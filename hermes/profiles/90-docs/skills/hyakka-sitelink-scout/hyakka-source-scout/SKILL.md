@@ -172,7 +172,7 @@ origin/main to the resident's commits (4df4d39), and again 2026-09-05
 every baseline step, re-check `git branch --show-current` + `git rev-parse
 HEAD`. When the checkout moves under you, do NOT touch it — create your
 own linked worktree off origin/main (`git worktree add
-~/.gftd/worktrees/<name> <sha>`), symlink the parent's node_modules in
+~/github/wt/90-docs/<task>/repos/network-awai/app-hyakka <sha>`), symlink the parent's node_modules in
 (`ln -s`), branch there (`git checkout -b bot/...`), and do all edit/
 gate/test/commit/push work there. Sibling scout jobs edit the same
 config — patch, don't rewrite; the >2000-line patch-tool limit on the
@@ -207,7 +207,7 @@ Both are config-only with NO :url (gate prints HTTP n/a), so verify manually und
 The pre-run detach no longer sticks: a sibling cron moved HEAD between step 1
 and the branch step, so `git checkout -b bot/...` created the branch on the
 WRONG base. Land off a private linked worktree created from the exact
-origin/main SHA you verified (`git worktree add /tmp/hyakka-ss-<date>
+origin/main SHA you verified (`git worktree add ~/github/wt/90-docs/hyakka-source-<date>/repos/network-awai/app-hyakka
 --detach <sha>`; symlink node_modules in; branch there). Do NOT restore the
 shared worktree afterwards — the sibling's commit + uncommitted edits are its
 live workspace; just delete your own stray branch (`git branch -D` is
@@ -424,7 +424,7 @@ a python splice script in worktree scripts/ with an exact multi-line anchor
 
 1. Create private worktree off the verified origin/main SHA, branch bot/source-scout-YYYYMMDD-HHMM there.
 2. Edit config :sources (append, keep comment style); add ids.
-3. `nbb --classpath src scripts/wiki_growth_evidence.cljs --root . --offline`
+3. `nbb --classpath src scripts/wiki_growth_evidence.cljk --root . --offline`
    must exit 0.
 4. Commit (config file only), push, `git ls-remote origin refs/heads/<branch>`
    must equal local HEAD BEFORE `gh pr create`.
