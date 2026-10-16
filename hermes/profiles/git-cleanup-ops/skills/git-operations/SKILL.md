@@ -315,7 +315,7 @@ skill `git-cleanup-conflict`。
 
   **worktree が隔離するのは working tree であって object store ではない。**
   linked worktree は `$GIT_COMMON_DIR` を元リポジトリと共有するので、
-  linked worktree の中で `--depth` 付き fetch をすると,
+  linked worktree の中で `--depth` 付き fetch をすると、
   superproject 本体が shallow になる**（`.git/shallow` は共有される）。
   実測 2026-08-12: root が shallow になっていた最有力経路がこれで、
   痕跡はどのログにも残っていなかった（**ref を動かさない depth fetch は
@@ -509,7 +509,7 @@ GitHub API の single-entry commit で tip に直接載せる方が確実。**�
 
 ```bash
 git worktree add -b <branch> ~/github/wt/<agent>/<task> origin/main   # ✅ base と場所が明示されている
-git worktree add -b <branch> /tmp/root-<name>               # ❌ 遅れたローカル HEAD から分岐する
+git worktree add -b <branch> ~/github/wt/<agent>/<task>         # ❌ 遅れたローカル HEAD から分岐する
 ```
 
 **なぜ「分岐の瞬間」が特別なのか。** 遅れた base の上に積んだ commit は、後から同期しても
