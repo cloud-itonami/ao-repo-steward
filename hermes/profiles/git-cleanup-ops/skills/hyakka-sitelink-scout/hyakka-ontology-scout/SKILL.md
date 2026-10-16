@@ -20,18 +20,18 @@ only .gp-analysis-out inside, no .git) is a real sibling-wipe condition, not a
 script glitch — verify with ls, then stop. The private-worktree recipe below
 is for runs that proceed, not for overriding a refusal.
 
-2026-09-18: REFUSED was `ENOENT .../scripts/wiki_growth_evidence.cljs` — the
+2026-09-18: REFUSED was `ENOENT .../scripts/wiki_growth_evidence.cljk` — the
 shared pre-run collector still opens the OLD `.cljs` path while main renamed
 every Clojure source to `.cljk` (commit e7dc7747; HEAD d750b5d0 confirms
 scripts/wiki_growth_evidence.cljk). Same for the gate: the prompt's canonical
-`scripts/verify_source_proposal.cljs` is now verify_source_proposal.cljk — fix
+`scripts/verify_source_proposal.cljk` is now verify_source_proposal.cljk — fix
 the extension in BOTH the collector invocation and any manual gate run. Also
 note the collector ran from ~/.itonami-fleet/worktrees/ while the prompt says
 ~/.gftd/worktrees/ — both worktrees exist; the stale path, not the worktree,
 broke the run. 2026-09-19: same ENOENT recurred — the job's own --workdir
 resolved to ~/.itonami-fleet/worktrees/hyakka-growth-bot (branch (2) of
 _work_root in ~/.hermes/scripts/hyakka_evidence.py), and that collector still
-hardcodes `scripts/wiki_growth_evidence.cljs` at line 89. Durable fix is
+hardcodes `scripts/wiki_growth_evidence.cljk` at line 89. Durable fix is
 one token in hyakka_evidence.py (`.cljs`→`.cljk`), NOT in jobs.json; the
 tree itself was fine (HEAD==origin/main, .cljk present, and post-mortem
 grep showed zero prop mentions + rejected-count 0 in all post-09-06
@@ -220,7 +220,7 @@ your job is zero NEW ones, and the unfaceted-list delta is your repair proof.
 
 ## Gate + landing
 
-- `nbb --classpath src scripts/verify_source_proposal.cljs --root . --proposal
+- `nbb --classpath src scripts/verify_source_proposal.cljk --root . --proposal
   <run-unique>.edn` — properties need `:name` + `:rationale` per entry (plain
   string); `:corpus` is accepted on the entries. Gate rescans ALL receipts
   (~630 files, takes ~30-60s in nbb; first attempt may time out at 300s —

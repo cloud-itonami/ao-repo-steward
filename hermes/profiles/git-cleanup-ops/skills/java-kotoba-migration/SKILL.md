@@ -45,13 +45,7 @@ with `amu check --jvm-free` + `amu test --jvm-free` + a Node-side test script
 over the host artifacts, state the suite's JVM-boundness in the report, and
 leave the suite port as its own authorized wave (skill `kbb-test-suite-fix`).
 
-Landing flow for org repos (measured working path, all main-branch):
-clone to /tmp → write the guest → check + compile locally → commit to main →
-`git push origin main` → confirm remote HEAD with
-`gh api repos/<org>/<repo>/commits/main --jq .sha`. A repo checked out at a
-detached HEAD reports `src refspec main does not match any` on push —
-`git checkout -B main <verified-sha>` first. West checkouts name the remote
-per-org (`kotoba-lang`, `net-kotobase`), NOT `origin` — `git fetch origin`
+Landing flow for org repos: use the canonical repository or a task worktree under `~/github/wt/<agent-or-bot>/<task>`. Make a topic branch, run the requested checks, push only that branch, open a PR, and land through the reviewed PR flow. Never commit or push directly to `main`, and never use `checkout -B` to overwrite an existing branch. West checkouts may name the remote per-org (`kotoba-lang`, `net-kotobase`) rather than `origin` — inspect `git remote -v` before fetching.
 fails with "'origin' does not appear to be a git repository"; read
 `git remote -v` first and use the org-named remote for fetch/push.
 
@@ -194,7 +188,7 @@ Ed25519 sign/verify. Probe classpath recipe for `ed25519.sign` under kbb:
 git fetch origin
 git merge origin/main --allow-unrelated-histories -X ours -m 'Merge remote placeholder'
 # -X ours only wins CONFLICTS; files that exist only on remote still land — explicitly remove superseded placeholders:
-git rm <remote-only placeholder files> && git commit && git push origin main
+git rm <remote-only placeholder files> && git commit && git push origin <topic-branch> && gh pr create --base main
 ```
 
 Re-check `git ls-tree -r --name-only HEAD` — placeholder `.clj` files reappear after this merge if you only relied on `-X ours`.
@@ -239,7 +233,7 @@ Adding `#?(:clj ...)` to a `.clj` file fails `load-file` with "Conditional read 
 
 West checkouts sit on detached HEAD — never commit there. Worktree + server-side merge:
 
-1. `git worktree add ../wt-<name> -b <branch>` — sibling depth (next to the repo, inside the superproject is fine for plain git without west; `/tmp` breaks repos whose `deps.edn` uses relative `:local/root "../../..."`).
+1. `git worktree add -b <branch> ~/github/wt/<agent-or-bot>/<task>` — use canonical managed worktree locations; do not place project worktrees under `/tmp` or home-level scratch paths.
 2. Commit and push the branch.
 3. Server-side merge (no local merge/rebase):
    ```bash
@@ -502,9 +496,9 @@ An adapter repo (e.g. kotoba-net) needs a `deps.edn` at its ROOT (`{:paths ["src
 
 ### Distinguish source repos from auto-generated worktrees
 
-- **Source repos live in `~/github/com-junkasaki/orgs/`, `~/.gftd/kotoba-lang/`, `~/.codex-worktrees/`, `~/.gitlibs/libs/`**. Migrate `.clj`/`.cljc` files in these locations.
-- **Auto-generated worktrees live in `~/.gftd/worktrees/`**. These are temporary/build artifacts (e.g., `kotoba-cli-build-bot/`, `kotoba-cli-build-verifier/`). **DO NOT migrate** `.clj`/`.cljc` files here — they will be regenerated.
-- **Identify target directories first**: `find ~/github/com-junkasaki/orgs -type f -name '*.clj'` vs `find ~/.gftd/worktrees -type f -name '*.clj'`.
+- **Source repositories live under `~/github/<org>/<repo>`.** Work only in a task worktree under `~/github/wt/<agent-or-bot>/<task>`; do not modify managed caches or application state under `~/.gftd`, `~/.codex-worktrees`, or `~/.gitlibs`.
+- **Generated build output and managed caches are not source repositories.** Do not modify files under application-managed caches; they remain in their existing application directories.
+- **Identify target directories first**: `find ~/github/com-junkawasaki/orgs -type f -name '*.clj'` vs `find ~/.gftd/worktrees -type f -name '*.clj'`.
 
 ### File selection rules
 
@@ -532,7 +526,7 @@ verified.
 ### Migration pattern
 
 1. Identify target orgs (exclude `~/.gftd/worktrees/`)
-2. Convert files: `find . -type f \( -name '*.clj' -o -name '*.cljc' \) -exec sh -c 'cp "$1" "${1%.clj}.kotoba"' _ {} \;`
+2. Convert files: enumerate exact `.clj` and `.cljc` inputs, then use an extension-aware converter. Do not apply `${1%.clj}` to `.cljc` files.
 3. Keep same `ns` declaration in converted files
 4. Verify with `find . -type f -name '*.kotoba' | wc -l`
 

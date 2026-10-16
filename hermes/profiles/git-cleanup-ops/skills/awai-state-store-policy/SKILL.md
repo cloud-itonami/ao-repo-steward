@@ -117,7 +117,7 @@ R2 conditional write が使えない場合の fallback は inga quorum 証明書
   は worktree 起点で解決される (/tmp だと全部消える)。kbb-config skill の記述どおり。
   cloud-murakumo 型の repo は `orgs/network-awai/<repo>-app-wtx/<name>` のような
   superproject 内の捨てディレクトリに置くと policy script がそれも走査する —
-  作業後 worktree remove + dir 削除 + branch -D までが tick。
+  着地前に worktree / branch を削除しない。merge 後に status を再確認し、clean の場合だけ non-forced worktree remove と `git branch -d` を行う。dirty / locked / uncertain なら WIP と branch を残して報告する。
 - **wrangler kv key put --remote 相当は `wrangler r2 object put
   <bucket>/<key> --file <path>`** (--remote / --binding 不要、r2 object put は常に
   remote)。worker 側 read は KV の `.get(key)` が Promise<String> を返すのに対し R2 は
@@ -138,7 +138,7 @@ R2 conditional write が使えない場合の fallback は inga quorum 証明書
   無しでは走らない。kbb sci 側は `nbb.classpath/add-classpath` で text/src を
   足せば require は通る (probe 実測 OK) が、out/worker.js 無しでは smoke の
   main 経路が nil。次候補から外し、台帳に started-blocked 行を書いた。
-  worktree は branch 切るだけの read-only tick でも削除 + node_modules 掃除まで。
+  read-only tick でも他 session の worktree を削除したり node_modules を掃除したりしない。自分の task worktree は明示的に着地し、clean / unlocked を確認してからのみ撤去する。
 
 ## net-babiniku BROADCAST_DB — 2026-09-15 着地 (merge 91edbb7)
 
@@ -174,11 +174,7 @@ R2 conditional write が使えない場合の fallback は inga quorum 証明書
 - **broadcast.js (BROADCAST_DB 単独 consumer) は config-gated 503 で書かれており**、
   binding 削除だけでも 503 経路で正しく degrade する (実測読み)。
 
-- **未 merge でない worktree も違反走査に載る**: superproject 内 wtx worktree の
-  checkout は policy script が本物として走査する (cloud-itonami-app-wtx 実測で +3 違反、
-  SCANNED 42)。merge を終えた worktree は同一 tick 内に remove (--force、branch は origin
-  残置) すること — 2026-09-20 実測 12→9。着手途中の tick でも tick 終端に worktree を残さず、
-  chunk commit → push → worktree remove → 次 tick 再 create の循環にする。
+- **worktree も違反走査に載る**: policy script の対象になるため、作業途中の worktree を片付けのために削除しない。着地後に直前の `git status --porcelain` が空で、worktree が unlocked と確認できた場合だけ `git worktree remove <path>`（`--force` なし）を行う。branch は着地 ancestry を確認して `git branch -d`。dirty / locked / 未着地 worktree は保持して報告する。
 - **worktree 位置の制約**: deps.edn の `:local/root "../../kotoba-lang/..."` は worktree
   起点で解決されるため cloud-itonami は `orgs/network-awai/cloud-itonami-app-wtx/<task>`
   以外に置けない (sibling dir では classpath が崩れる)。上記運用とセットで管理。

@@ -295,7 +295,7 @@ skill `git-cleanup-conflict`。
   作業前に一時 worktree を切って、そこで完結させる:
 
   ```bash
-  git worktree add -B <session-branch> <path> origin/main   # 独立 working tree
+  git worktree add -b <session-branch> <path> origin/main   # refuse if branch exists
   # ... <path> で編集 / commit / test ...
   git push origin <session-branch>
   gh api repos/<org>/<repo>/merges -f base=main -f head=<session-branch> \
@@ -303,7 +303,7 @@ skill `git-cleanup-conflict`。
   git worktree remove <path>                                 # 使い終わったら片付ける
   ```
 
-  **`<path>` は superproject ルートの外（例: scratchpad / `/tmp` 配下）にする。**
+  **`<path>` は `~/github/wt/<agent-or-bot>/<task>` 配下にする。** `/tmp` やホーム直下には project/worktree を作らない。west を使う分離 workspace は `~/github/workspaces/west/<task>` に `.west/config` を置き、共有 workspace の広域 update をしない。
   `.claude/worktrees/` 等 superproject 内側に worktree を作ると、west は `.west/`
   を親ディレクトリへ辿って発見するため topdir が superproject ルートのままになり、
   worktree 内で `west update` しても実際には共有の `orgs/` を操作してしまう
@@ -315,7 +315,7 @@ skill `git-cleanup-conflict`。
 
   **worktree が隔離するのは working tree であって object store ではない。**
   linked worktree は `$GIT_COMMON_DIR` を元リポジトリと共有するので、
-  **`/tmp` に作った「使い捨て」worktree の中で `--depth` 付き fetch をすると、
+  linked worktree の中で `--depth` 付き fetch をすると、
   superproject 本体が shallow になる**（`.git/shallow` は共有される）。
   実測 2026-08-12: root が shallow になっていた最有力経路がこれで、
   痕跡はどのログにも残っていなかった（**ref を動かさない depth fetch は
@@ -508,8 +508,8 @@ GitHub API の single-entry commit で tip に直接載せる方が確実。**�
 ローカルが遅れていても正しい base から始まる:
 
 ```bash
-git worktree add -b <branch> /tmp/root-<name> origin/main   # ✅ 分岐元が明示されている
-git worktree add -b <branch> /tmp/root-<name>               # ❌ 遅れたローカル HEAD から分岐する
+git worktree add -b <branch> ~/github/wt/<agent>/<task> origin/main   # ✅ base と場所が明示されている
+git worktree add -b <branch> ~/github/wt/<agent>/<task>         # ❌ 遅れたローカル HEAD から分岐する
 ```
 
 **なぜ「分岐の瞬間」が特別なのか。** 遅れた base の上に積んだ commit は、後から同期しても
@@ -540,7 +540,7 @@ push 直前まで行われなかった。**警告を読むことと同期する�
   commit・ブランチ切替をしない。やってよいのは `git fetch` / `--ff-only` pull /
   `west update` / 読み取りだけ。本体に未コミット編集が転がっていると、並行セッションの
   main 同期のたびに「他人の WIP を stash 温存」が発火して stash が堆積する。
-- **作業は 1 task = 1 branch = 1 worktree（superproject の外、sibling path）。**
+- **作業は 1 task = 1 branch = 1 worktree（`~/github/wt/<agent-or-bot>/<task>`）。**
   既定入口は `kbb --backend sci scripts/root-worktree.cljk create <task>`（ADR-2608291248）。
   `origin/main` fetch → `--no-checkout` → cone sparse checkout + sparse-index を行い、
   root 23万件を毎回展開しない。ADR/政策は `--profile docs|policy`、追加 directory は
@@ -551,10 +551,10 @@ push 直前まで行われなかった。**警告を読むことと同期する�
   所有者が付き branch 単位で棚卸しできるが、stash は無名の共有スタックで誰のものか
   追えなくなる。stash を使ってよいのは「共有 checkout で見つけた他人の未コミット WIP を
   消さないための緊急退避」だけで、積んだら cleanup で必ず棚卸しする。
-- **着地後の後片付けまでがタスクの完了条件。** push → サーバ側マージ
-  （`gh api .../merges`）→ `git worktree remove` → `git branch -D <branch>` →
-  マージ済み remote branch の削除。「マージしたのに branch/worktree が残っている」
-  状態を作らない。
+- **着地後の後片付けは clean / unlocked を確認してから行う。** push → サーバ側マージ
+  （`gh api .../merges`）→ `git status --porcelain` → clean の場合だけ
+  `git worktree remove <path>`（`--force` なし）→ ancestry を確認して `git branch -d <branch>`。
+  Dirty / locked / 不確実なら WIP と branch を残す。remote branch は削除しない。
 - **worktree モデルはディスクを理由に捨てない。捨てる理由になるのは「同時書き手が 1 人」だけ**
   （オーナー判断 2026-09-06、ADR-2609061800）。「この端末だけで開発する」に変わっても、
   この端末では Claude セッション・codex・launchd の `cloud.itonami.bot.*` bot が同時に書いている
@@ -622,4 +622,3 @@ fork がそちらを実行許可として拾い、指示範囲を超えて実装
   会話コンテキストを継承しないので、自分がどの base で作業しているかを本人は知らない —
   SHA を渡しておけば、agent 側が着地時に「自分の base が現 main と一致するか」を自力で
   検証でき、古い base への上積みが黙って進むのを防げる。
-

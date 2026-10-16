@@ -3,6 +3,8 @@ name: murakumo-edge-ring
 description: Use when adding murakumo model ids or edge-ring nodes.
 ---
 
+> Current owner policy: route inference through Murakumo/Mishima only, with `fallback_providers: []`. Do not enable a model or provider fallback. If the configured request cannot be served, stop and report.
+
 # murakumo-edge-ring
 
 murakumo gateway への model id / tier alias 追加と、edge node を queue ring に join させる手順。
@@ -37,10 +39,10 @@ refresh 手順は `release/cljs/README.md`。要点:
   ではなく「source 拡張子が違う」。
 - **worktree の場所は superproject 構造に合わせる**: `.cljk` repo の deps.edn
   は `:local/root "../../kotoba-lang/..."` と `:paths "../<sibling>/src"` で
-  sibling を相対参照する。/tmp に worktree を切ると全 sibling が解決できず
+  sibling を相対参照する。worktree は `~/github/wt/<agent-or-bot>/<task>` に置く。
   `Error building classpath. Local lib ... not found` になる。**`git worktree
   move` で superproject の orgs/<dir>/worktrees/ 配下へ移してから compile する**
-  （/tmp 配下に作って後から move も可）。`:paths` 相対参照の sibling は
+  (`/tmp` 配下への project/worktree 作成や後からの移動は禁止)。`:paths` 相対参照の sibling は
   worktree 親ディレクトリに symlink（`../cloud-murakumo` 等）を張る。
 - **test は compile と別**: `npm run test:cljs`（= kbb --backend sci
   scripts/run-cljs-tests.cljk）は nbb が `.cljk` を解決するので JVM 無しで
@@ -296,24 +298,9 @@ replica 実測」節を正とする。SKILL.md に置く不変条件だけ:
   kotoba subset のみで js interop 拒否、kbb engine bundle は loadString
   wrapper で sibling ns を disk から解決するため workerd 不可、engine closure
   の toString は $APP/var 依存で単独不可能）。
-- **bot fallback への寄せは workload fit で選ぶ**: fallback に ling-3.0-tiny
-  を指定すると実際に選ばれるが、**window を超える session は
-  「Context length exceeded」で死ぬ**。scout/crawl 系（小 session）は適合、
-  compression/aux や長文 crawl は寄せない。rollout は job 単位で workload fit
-  を見て選ぶ（agent.log の model= 行と tokens 数で判定）。失敗したら fallback
-  を元に戻してから次へ。
-- **window はモデルの上限ではなく llama-server の `-c` 起動 flag**: モデル本来
-  の ceiling は HF config の `max_position_embeddings` で確認する。KV cache は
-  `2×n_kv_heads×head_dim×n_layers×2` bytes/token から算出、`--cache-type-k/v
-  q8_0` で半分。window を上げたら **node 上で実応答 probe（失敗 case より大きい
-  token 数の needle 探し）を通してから gateway face を動かす**。
-- **Hermes profile の fallback 変更は hand-edit せず `HERMES_HOME=<profile>
-  hermes config set fallback_providers '<edn>'` で行う**（bare `hermes` は PATH
-  に無い — venv 内 binary を使う）。反映確認は config.yaml の
-  fallback_providers 節を grep。`hermes cron run <id> --accept-hooks` は
-  dispatch で返らず job 完了まで block する — 進行は agent.log の `model=` 行
-  と jobs.json の last_status で読む。
-- **usagi window は 65536（q8_0 KV）に引き上げ済み**: 8192 で compression session が死んだのを 32768 で直し、Hermes の 64K init gate が 32768 を拒むのを 65536 で直した（node probe 実測 41,936-token 通過）。**窓の正は node unit の `--ctx-size` のみ** — gateway 3 面（worker.cljk model-context-windows / model_token_limits.js DEFAULTS / model_registry.cljk seed の `:context`）と KV descriptor は写しで、deploy 前の写しが旧値のままでも node 側は正しく動く（逆に node probe 通過だけでは caller は死ぬ — 3 段階障害の順路は murakumo-tiers.md を読む）。**KV descriptor は operator PUT が seed に勝つ** ので、seed を変えたら KV descriptor も同じ値で PUT する（実測: PUT なしだと live catalog が旧値を返し続けた）。rollout 完了: 402 profiles 30 件 + default の fallback を murakomo/ling-3.0-tiny に設定。⚠ 「murakomo/usagi」の typo は UNKNOWN 16384 で正しく拒否される（silent-rewrite fix は未着地 — usagi で失敗したらまず typo を疑う）。
+- **bot model routing は owner policy で固定する**: Murakumo/Mishima のみを使い、fallback を workload fit で選ばない。agent.log の model 行と token 数は診断に使う。失敗したら実行を止めて報告する。
+- **Hermes profile routing is fixed by owner policy**: keep the provider Murakumo, model Mishima, and `fallback_providers: []`. Do not run `hermes config set fallback_providers` or refire disabled jobs. If the model, capacity, or gateway fails, inspect logs for diagnosis and stop/report.
+- **usagi window は 65536（q8_0 KV）に引き上げ済み**: 8192 で compression session が死んだのを 32768 で直し、Hermes の 64K init gate が 32768 を拒むのを 65536 で直した（node probe 実測 41,936-token 通過）。**窓の正は node unit の `--ctx-size` のみ** — gateway 3 面（worker.cljk model-context-windows / model_token_limits.js DEFAULTS / model_registry.cljk seed の `:context`）と KV descriptor は写しで、deploy 前の写しが旧値のままでも node 側は正しく動く（逆に node probe 通過だけでは caller は死ぬ — 3 段階障害の順路は murakumo-tiers.md を読む）。**KV descriptor は operator PUT が seed に勝つ** ので、seed を変えたら KV descriptor も同じ値で PUT する（実測: PUT なしだと live catalog が旧値を返し続けた）。historical rollout record only; do not restore that fallback. Current route remains Murakumo/Mishima with `fallback_providers: []`.
 - **窓変更は個別面の手編集でやらない（ADR-2609131642）**: 正（node unit sed + restart）→ node 上で旧値超え needle probe（fail なら全後続中止）→ KV PUT → gateway 3 面は worktree/PR（seed の窓値を忘れない — `grep -rn 'ling-3.0-tiny\|32768' test/` で隣の pin から発見できる）→ Hermes cache 清掃、の順で 1 本の伝播にする。乖離の常時監視は fleet-model-watch の `usagi_window` ledger field（node 実値 vs gateway 実 fetch、node 到達不能は UNMEASURED を返す — 一致を偽装しない）。
 - **⚠ routes.cljk は pure/test 面のみ**。live gateway の `/infer/models` は
   **worker.cljk 独自の face**（list: `(:list kx) "infer.models"`、per-id

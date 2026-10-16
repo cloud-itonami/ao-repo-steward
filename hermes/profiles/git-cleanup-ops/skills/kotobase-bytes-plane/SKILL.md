@@ -26,7 +26,7 @@ diagnostic を引用して記録する）。
 1. **worktree を切る**（共有 checkout は触らない）:
    ```bash
    cd <superproject>/orgs/net-kotobase/ipfs
-   git worktree add -b feat/<topic> ~/.itonami-fleet/worktrees/<repo>-<topic> origin/main
+   git worktree add -b feat/<topic> ~/github/wt/<agent-or-bot>/<task> origin/main
    cd ~/.itonami-fleet/worktrees/<repo>-<topic>
    ln -sfn <superproject>/orgs/net-kotobase/ipfs/node_modules node_modules
    mkdir -p out
@@ -278,4 +278,3 @@ mirror zone からの発展形。owner 指示「bytes plane は yataverse.com �
   回し、test は gateway_test に fake-fetch で apex を直接叩く形（`worker/route` に
   `https://yataverse.com<path>` の Request）で pin する — host を apex にしないと
   「operator host 404 に落ちた」regression を検出できない。
-

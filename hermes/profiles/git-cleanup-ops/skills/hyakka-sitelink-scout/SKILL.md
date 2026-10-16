@@ -3,6 +3,8 @@ name: hyakka-sitelink-scout
 description: Use when the hyakka sitelink-scout run hits WDQS 502/504s.
 ---
 
+> Current owner rules: use `~/github/wt/<agent-or-bot>/<task>` for task worktrees and `~/github/workspaces/<agent-or-bot>/<task>` for scratch. Historical `/tmp` examples below are not current work instructions.
+
 # hyakka sitelink-scout: engineering lessons (2026-09-01, PR #188)
 
 The run prompt defines the job (top unconfigured Wikidata entities by sitelink
@@ -524,7 +526,7 @@ wants encyclopedic entities, not these.
 - 20260904b ranking file SURVIVED in the sitelink worktree again (3000 rows, [qid links] pairs) — no discovery query burned. Walked ranks 222-245: 10 picks in 24 rows, band 340-336 (Q18 340, Q395/Q833/Q76 339, Q649 337, Q114/Q432/Q211/Q315/Q692 336); run-b's residue prediction confirmed EXACTLY by EntityData re-measure, third run running. Zero colon-junk this deep; all 9 refusals p31-internal (Category/Template/User-lang kin). Next run: walk from rank 246 (next rows: Q1065 335, Q32 335, Q858 335, Q1028/Q1049/Q22686/Q64 334 — DISCOVERY counts only); ranking tail cuts at 176 links, fresh discovery query due within ~2 runs.
 - Sibling-race played out BOTH ways in one run: walker excluded 5 rows as 'claimed by open #471' — #471 then merged via rebase #478 mid-run and main ALSO absorbed the run-b residue rows (Q302 Jesus among them) that I would otherwise have picked. CONFLICTING flip on gh pr view was the first signal; re-fetch origin/main, merge, resolve keep-both, re-run landcheck+evidence (692 = 672 + 10 mine + 10 #478's), push, mergeable CLEAN. Always re-verify the config tail after a CONFLICTING flip.
 - Resolver assert lesson: exact-string compare of the map-close line fails across bot batches (mine 2-space continuation indent, main's 3-space) — assert with `.strip().endswith(':interval-seconds 86400 :llm? true}')` instead.
-- verify-script hygiene: `nbb -m ns` CANNOT run a /tmp .cljs script (class not on classpath) — plain `nbb /tmp/x.cljs` only. Cost two wasted runs before spotted; the run-broken form was copy-carried in my own verify.sh.
+- verify-script hygiene: ``nbb -m ns` CANNOT run a standalone script without the required classpath; keep temporary scripts under `~/github/workspaces/<agent-or-bot>/<task>` and use the current `.cljk` entrypoint. Cost two wasted runs before spotted; the run-broken form was copy-carried in my own verify.sh.
 - stdout capture worked ALL run this time (dead-redirect era over) but keep scripts self-logging anyway; patch tool behaved on /tmp scripts; worktree carries 150+ untracked scratch files from old runs — harmless, never committed, leave them.
 - Landed #479: gate 10/10 pre-landing (byte sizes == own curl fetches), commit a7b8dfe config-only 72 insertions, merge commit c61bb2d, ls-remote==HEAD checked after both pushes, body via --body-file (edited post-merge with gh pr edit, len 3520 verified), MERGEABLE at finish.
 
@@ -747,7 +749,7 @@ wants encyclopedic entities, not these.
 ## 2026-09-07 run bb (PR #696) addenda
 
 - /tmp POISON kills ALL python: a sibling cron's /tmp/inspect.py shadows stdlib inspect → every python script dies at import ('inspect' has no attribute 'signature'); looks like the dead-stdout bug but the wrapper log shows the traceback. Fix: quarantine shadow files (rename /tmp/<stdlib-name>.py → *.poison-quarantined) AND keep run scripts in the WORKTREE — a script's own dir is sys.path[0], so /tmp never lands on the path.
-- Base-evidence delta WITHOUT touching the tree: `git worktree add --detach /tmp/sl_base_wt <base-sha>` + symlink node_modules into it, run evidence --root <tmp>, then worktree remove. This run: base 1602 vs branch 1612 = exact +10 even though main absorbed 5 sibling commits (incl. class-scout #689 space probes) between gate and land.
+- Base-evidence delta WITHOUT touching the tree: `git worktree add --detach ~/github/wt/<agent-or-bot>/<task>/sl-base <base-sha>` with dependencies installed through the repository workflow, run evidence --root <tmp>, then worktree remove. This run: base 1602 vs branch 1612 = exact +10 even though main absorbed 5 sibling commits (incl. class-scout #689 space probes) between gate and land.
 - Rank-565+ band of tmp-sl-ranked-20260907.json was ~fully absorbed: 76 cfg-excluded over ranks 565-742 (earlier batches landed it) vs 49 colon/p31 junk. Residue-first (Q958 South Sudan 281, Q8486 coffee 260) verified live then landed; Q8486 fetched twice across segments with identical counts (free consistency check).
 - Mid-run main move (68efa5dc→bfe2c97a) fired the rc3 abort BETWEEN gate and land exactly as designed; refresh cycle (re-dump cfg, PR sweep — only #692/Q17 open, re-gate with IDENTICAL byte sizes, re-land on the new base) completed cleanly. process_manage wait false-exit (exited/null while walker alive) recurred; DONE-line probe loop is the reliable wait.
 - Landed #696: branch bot/sitelink-scout-20260907-0540, commit 85606593 (config-only 66+/1− close relocate, maps 1607→1617), evidence exit 0 both bases, per-id greps 2× each, ls-remote==HEAD, post-create ancestor check rc=0, PR OPEN MERGEABLE, body read-back (2009 bytes, GATE_EXIT=0, 1602/1612, all 10 ids).

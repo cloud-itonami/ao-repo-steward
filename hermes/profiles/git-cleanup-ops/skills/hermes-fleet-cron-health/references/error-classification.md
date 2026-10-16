@@ -1,5 +1,7 @@
 # last_error → 対応 決定表
 
+> Current owner policy: use Murakumo/Mishima only with `fallback_providers: []`. Do not switch to OpenRouter, Kotoba API, peer inference, or another external route. If Murakumo cannot serve the configured request, stop and report; never copy secret values between profiles.
+
 `last_error` の substring か、その `last_status` / `failure_streak` からどう扱うかを
 一方向で決める。**後で loadavg を見る前に**これを当てて buckets を先に数え、
 その後で host 要因として一括解釈する。間違えやすい3つ（shutdown / drift_skip /
@@ -9,8 +11,8 @@ script-not-found）は太字。
 |---|---|---|---|
 | error | **"Gateway shutdown" / "Interrupted by shutdown"** | interrupt 巻き添え | host 過負荷・ゲートウェイ再起動波の self-heal。load 落ちても streak 伸び続ける時だけ真の障害 |
 | error | **"drift_skip" / "Skipped to prevent unintended spend"** | 費用手ガード | 意図的スキップ、次 tick で再実行。修正不要。error 率計算前に分離 |
-| error | "Connection error" | conn | 新 profile 初回 = .env の API key 欠如（config だけでは足りない）。稼働済み profile なら外部接続 |
-| error | "Broken pipe" / "connection_refused" | transient conn | gateway 再起動作業と cron 発火のタイミング衝突。murakumo 503 "Loading model" も同型（cold start）。対処は murakumo-main alias の健全性確認 (POST 200) 後 `hermes cron run <id> --profile <p>` で手動再 fire — コード修正不要 |
+| error | "Connection error" | conn | provider・key_env 名と credential presence metadata だけを確認し、秘密値は読まない / コピーしない。Murakumo 認証に問題があれば owner に報告 |
+| error | "Broken pipe" / "connection_refused" | transient conn | gateway 再起動と cron 発火の競合。Murakumo 503 "Loading model" も同型。ログで原因を確認し、停止中 / disabled job は再 fire しない。再試行が必要なら owner 承認を得てから行う |
 | error | "REFUSED" | refused | script 側の前提不成立（対象不在など）。スケジューリングではない |
 | error | "Script not found: ...scripts/<n>" | script | まず `ls <profile>/scripts/<n>` で実在を確認。実在なら stale 残滓で既に治癒 → 再 fire |
 | error | "TERMINAL_CWD read lock" / "Timed out waiting" | lock / timeout | 共有 workdir の衝突 or 過負荷の遅延 |
@@ -64,37 +66,15 @@ config.yaml の `model.default` を変更すると、その profile の **unpinn
 実例（同一 fork で 3 件同時発生）: あるセッションが pr-cleanup の config を
 glm→deepseek(nous) に変更した。glm に pin 済みだった pr-queue-review は provider 軸が、
 unpinned の pr-queue-pulse は model 軸が drift し、両方 skip になった。
-`hermes cron edit` で provider=openrouter-free model=z-ai/glm-5.3-flash に pin → 解消。
+これは歴史的な 2026-09-06 の事例であり、provider 切替手順として再利用しない。現在は Murakumo/Mishima と `fallback_providers: []` を維持する。
 
 関連: `murakumo-main` の `all-slots-busy 429`（capacity 2）は共有 slot 競合。webdesign 等
-が詰まったら非-murakumo の到達可能モデル（openrouter 側の安定 slug）へ config 変更 + job pin の
-組で直す。
+が詰まっても非-Murakumo provider へ切り替えない。停止して owner に報告する。
 
-## OpenRouter モデル切替の手順と落とし穴（glm→deepseek 一斉切替で実測）
+## 旧 OpenRouter 切替記録（historical only）
 
-旧モデルが OpenRouter で 404 "No allowed providers" / 429 を返し始めたら、次の順で全経路を
-置換する。**置換漏れは fallback チェーンを長くするだけで気付きにくい**（エラーは出るが
-最終的に応答するので、遅延として現れる）:
+以下の旧運用は撤回済みで、profile の現在の手順として実行しない。OpenRouter を選ぶ、fallback を増やす、または external provider へ切り替える操作は禁止。設定差分の調査では現行の Murakumo/Mishima 設定だけを確認し、fallback は空のままにする。容量・モデル・認証の問題は停止して owner に報告する。
 
-1. `~/.hermes/config.yaml` + 全 `profiles/*/config.yaml` の `model.default` と job-level model
-2. 全 `cron/jobs.json` の `model` フィールド（pin 済み job）
-3. **`model_snapshot` は dict 形式と STRING 形式の両方がある** — dict の `model` キーだけ見て
-   文字列形式 (`"model_snapshot": "z-ai/glm-5.3-flash"`) を取りこぼすと drift_skip が残る。
-   `provider_snapshot`（dict/str 両方）と prompt 本文内の言及も掃く。
-4. 検証は「enabled job の active field に旧 slug が残っていないか」で行う — `last_error` 等の
-   履歴診断文字列に残るのは無害なので、そこは数えない。
-5. 置換後 `hermes gateway restart`（multiplexer）で in-memory config を刷新。
+## 旧単一 provider routing 記録（historical only）
 
-`hermes cron edit <id>` は **profile 省略時は active profile の job しか見ない** — default
-(`~/.hermes/cron/`) の job には `--profile default` が必須。cron 登録簿を直接 JSON 編集する
-より CLI の方が snapshot の整合を保てるが、185 profile 級の大量処理では JSON 一括置換+
-検証スクリプトが現実的。
-
-## `provider_routing.only: [<provider>]` 型の単一 provider 固定は時限爆弾
-
-OpenRouter の `provider_routing.only: [<provider>]` を全 profile に一斉適用していた場合、その
-provider の無料キャンペーン終了で全 fleet が同時に `429 rpm_rate_limit_exceeded
-(limit_source: upstream_provider_shared_pool)` を返す。fallback チェーンも同じ制限を継承して
-いるため全部辿って遅延する。対処: `provider_routing` ブロックを削除して OpenRouter の
-自動分散（20+ serving provider、endpoints API で uptime 確認可）に戻す。YAML 直編集でよいが
-**gateway 再起動まで in-memory config は変わらない**。
+OpenRouter 固定経路に関する過去の測定値であり、現在の route 変更を指示しない。現在の owner policy は Murakumo/Mishima のみ、`fallback_providers: []`。provider-routing 設定を変更して外部自動分散へ戻さない。問題が起きたら停止して報告する。

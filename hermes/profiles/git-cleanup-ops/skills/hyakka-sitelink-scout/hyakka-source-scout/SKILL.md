@@ -3,6 +3,8 @@ name: hyakka-source-scout
 description: Use when a hyakka source-scout run proposes new sources.
 ---
 
+> Current owner rules: use `~/github/wt/<agent-or-bot>/<task>` for task worktrees; keep scratch files under `~/github/workspaces/<agent-or-bot>/<task>`. Preserve unrelated branches and WIP. Remove only a clean, unlocked worktree with non-forced removal; never force-delete a branch.
+
 # hyakka source-scout: how to run it without wasting the run
 
 Per-run landing records (what landed, which PR, which traps fired) moved to
@@ -101,7 +103,7 @@ diff vs origin/main is claimed; proposing it duplicates someone's work.
 - A background terminal run of this loop once failed all 110 fetches with
   errors swallowed by 2>/dev/null — run it foreground with error logging.
 
-## The gate (scripts/verify_source_proposal.cljs)
+## The gate (scripts/verify_source_proposal.cljk)
 
 - It re-fetches every proposed URL itself with UA
   `hyakka-source-proposal-verify/1` (NO contact string) and requires HTTP 200
@@ -424,7 +426,7 @@ a python splice script in worktree scripts/ with an exact multi-line anchor
 
 1. Create private worktree off the verified origin/main SHA, branch bot/source-scout-YYYYMMDD-HHMM there.
 2. Edit config :sources (append, keep comment style); add ids.
-3. `nbb --classpath src scripts/wiki_growth_evidence.cljs --root . --offline`
+3. `nbb --classpath src scripts/wiki_growth_evidence.cljk --root . --offline`
    must exit 0.
 4. Commit (config file only), push, `git ls-remote origin refs/heads/<branch>`
    must equal local HEAD BEFORE `gh pr create`.
@@ -434,7 +436,7 @@ a python splice script in worktree scripts/ with an exact multi-line anchor
 
 - The 09-09 deferred pair landed gate 2/2 exit 0 on pristine 53ce42f7 (evidence 2007→2009), PR #793 off private worktree /private/tmp/hyakka-ss-20260907c, branch bot/source-scout-20260907-2346, commit 2d2a2135. NSF fresh-keyword pool is NOW EMPTY — every future NSF source must probe a brand-new keyword live first (`json.loads(body)["response"]["award"]`); do not re-propose any keyword in the config (29 slices now).
 - Probe gotcha: `fundsObligated` is a LIST of FY-strings (['FY 2026 = $636,000.00']) — `'$' in value` on the raw value reports 0/25; check list elements. Parser contract unchanged (id/title/funder/recipient required; expDate etc. optional).
-- Private-worktree name collision: `git worktree add /tmp/hyakka-ss-<name>` fails `already exists` when a sibling took the name — check `ls` + the dir's `.git` gitdir pointer (sibling's dir pointed at the wiki-pr-merge superproject and was absent from growth-bot's worktree list). NEVER remove a sibling's dir; pick a fresh name. This run also showed worktree add FROM the shared growth-bot worktree (fresh origin fetched) registers in growth-bot's list and works without the superproject detour (no stale-ref problem).
+- Private-worktree name collision: `git worktree add -b <branch> ~/github/wt/<agent-or-bot>/<task>` fails `already exists` when a sibling took the name — check `ls` + the dir's `.git` gitdir pointer (sibling's dir pointed at the wiki-pr-merge superproject and was absent from growth-bot's worktree list). NEVER remove a sibling's dir; pick a fresh name. This run also showed worktree add FROM the shared growth-bot worktree (fresh origin fetched) registers in growth-bot's list and works without the superproject detour (no stale-ref problem).
 - `git diff origin/main...origin/pr-791` against a PR ref fetched via `+pull/N/head:refs/remotes/origin/pr-N` works for the claimed-set check; PR #791 was commons-only, no overlap.
 
 ## 2026-09-08 run: SWPC solar-cycle-25 pair (PR #695)
@@ -647,7 +649,7 @@ read-back (state OPEN, body contains the full gate verdict).
 - Pristine-main gate verdict after a mid-run merge: temp root with `git
   archive origin/main config` + symlinked src/scripts/knowledge — gate
   re-fetched NSF live itself (117802B), 2/2 ok.
-- Compound `git worktree remove X; git branch -D Y` in one command trips the
+- Compound `git worktree remove X; git branch -d Y` in one command trips the
   approval gate as "git branch force delete" — run `git worktree remove`
   ALONE (it passes), and leave the pushed local branch behind.
 - Mid-run main moved 59052c2->56b2220 (#621, 10 wikidata sitelinks) between
@@ -775,7 +777,7 @@ read-back (state OPEN, body contains the full gate verdict).
 
 ## 2026-09-10 second run: ECB CZK + ISK (PR #776); worktree dir found EMPTY
 
-- The .gftd/hyakka-growth-bot worktree dir can be found EMPTIED (only .gp-analysis-out inside, no .git) — a sibling wiped/pruned it. The superproject for all fleet worktrees is ~/.hermes/profiles/wiki-pr-merge/app-hyakka: `git worktree add /tmp/hyakka-ss-<date> --detach <verified-origin/main-sha>` there and the whole private-worktree flow is unaffected. Do NOT try to restore the shared worktree.
+- The .gftd/hyakka-growth-bot worktree dir can be found EMPTIED (only .gp-analysis-out inside, no .git) — a sibling wiped/pruned it. The superproject for all fleet worktrees is ~/.hermes/profiles/wiki-pr-merge/app-hyakka: `git worktree add --detach ~/github/wt/<agent-or-bot>/<task> <verified-origin/main-sha>` there and the whole private-worktree flow is unaffected. Do NOT try to restore the shared worktree.
 - The .kotoba rename is STILL on main after #771: all 82 src/**/*.kotoba lack .cljc siblings — remake the symlink twins EVERY run before any nbb call (python script walking src/, not find -exec). [SUPERSEDED 2026-09-10: #871's 244e7e75 REVERTED the rename — .cljc files are tracked on main again; creating twins now BLOCKS re-parenting with 'untracked files would be overwritten' (see REFUSED fourth flavor). Do not create twins post-revert; delete stale twins instead.]
 - Landing that worked: probe both EXR URLs under gate UA (200 + ~3.3KB + 20 generic:Obs + code ×2), gate 2/2 exit 0 on pristine 4ab5cb06 BEFORE splicing, evidence 1917→1919, splice anchor `:access "public" :interval-seconds 86400 :llm? true}\n]}` (count==1), PR #776 with ls-remote==HEAD check. Remaining EXR pool: BGN, RON, TRY (probed green 09-10) — re-probe fresh each run.
 
@@ -822,7 +824,7 @@ read-back (state OPEN, body contains the full gate verdict).
 
 - After #793 declared the NSF fresh-keyword pool empty, this run probed FOUR brand-new keywords live (photosynthesis, carbon capture, antibiotic resistance, volcano — all 200/25 records/fields 25/25) and landed photosynthesis + volcano (PR #801, gate 2/2 exit 0 on pristine 051caf00, evidence 2051→2053). carbon%20capture + antibiotic%20resistance probed green and are the new deferred-validated pool. The "pool empty" state means no keyword had been PROBED yet, not that the keyword space is exhausted — fresh topical keywords keep the lane alive indefinitely.
 - The pre-run evidence output's "## configured sources" list is the fast fresh-keyword oracle: grep it for the proposed id instead of re-deriving the keyword list from config (evidence line format `nsf-awards-<kw>\t:nsf-awards-json\tfunding\tdeterministic\tIDLE`).
-- The evidence script (scripts/wiki_growth_evidence.cljs) prints to STDOUT ONLY — there is no knowledge/analysis/growth-evidence.txt file; the captured terminal log IS the read-back. Verify via `grep -E '^sources-configured' <captured-log>` + configured-line greps there.
+- The evidence script (scripts/wiki_growth_evidence.cljk) prints to STDOUT ONLY — there is no knowledge/analysis/growth-evidence.txt file; the captured terminal log IS the read-back. Verify via `grep -E '^sources-configured' <captured-log>` + configured-line greps there.
 - Worktree state this run: shared worktree clean at origin/main, twins needed again (82 .kotoba), zero open PRs at start AND at create (re-list caught no latecomers), ls-remote==HEAD pre-create, gh pr view --json state=OPEN + body needles verified post-create.
 
 ## 2026-09-10 run: deferred NSF pool drained — exoplanet + earthquake-early-warning (PR #841)
@@ -906,7 +908,7 @@ Landing checklists and per-run verdicts: see references/run-records.md.
 
 ## 2026-09-09 run: NSF dark-energy + qubit past a CLASSPATH BREAK on main (PR #954)
 
-- The documented gate command `nbb --classpath src scripts/verify_source_proposal.cljs ...` is BROKEN on main since f3f29b22 (2026-09-09 05:26 JST, "kotoba.lang.text instead of clojure.string"): ~135 src files now require kotoba namespaces, but `--classpath src` no longer resolves them — `kotoba.lang.text` lives in io.github.kotoba-lang/text (a deps.edn git dep, sha 73bdb13a; local copy ~/.gftd/kotoba-lang/text/src), NOT in the repo's src/. Symptom: gate/evidence die `Could not find namespace: kotoba.lang.text` even on a clean pristine checkout in the SHARED worktree. Fix that worked (no repo changes): extend --classpath with five local module srcs: `src:scripts:$KL/text/src:$KL/fs/src:$KL/string/src:$KL/edn/src:$KL/chain-observer/src` (KL=~/.gftd/kotoba-lang). Only three kotoba namespaces are needed by src+scripts (kotoba.lang.text, kotoba.edn, kotoba.chain.observation.v1); the extra module srcs cover transitive requires (kotoba.lang.edn→fs, string, text). If a future merge adds more kotoba requires, re-run the namespace grep (`grep -rhoE 'kotoba\.[a-z0-9.-]+' src/ scripts/ | sort -u`) and add the module owning each.
+- The documented gate command `nbb --classpath src scripts/verify_source_proposal.cljk ...` is BROKEN on main since f3f29b22 (2026-09-09 05:26 JST, "kotoba.lang.text instead of clojure.string"): ~135 src files now require kotoba namespaces, but `--classpath src` no longer resolves them — `kotoba.lang.text` lives in io.github.kotoba-lang/text (a deps.edn git dep, sha 73bdb13a; local copy ~/.gftd/kotoba-lang/text/src), NOT in the repo's src/. Symptom: gate/evidence die `Could not find namespace: kotoba.lang.text` even on a clean pristine checkout in the SHARED worktree. Fix that worked (no repo changes): extend --classpath with five local module srcs: `src:scripts:$KL/text/src:$KL/fs/src:$KL/string/src:$KL/edn/src:$KL/chain-observer/src` (KL=~/.gftd/kotoba-lang). Only three kotoba namespaces are needed by src+scripts (kotoba.lang.text, kotoba.edn, kotoba.chain.observation.v1); the extra module srcs cover transitive requires (kotoba.lang.edn→fs, string, text). If a future merge adds more kotoba requires, re-run the namespace grep (`grep -rhoE 'kotoba\.[a-z0-9.-]+' src/ scripts/ | sort -u`) and add the module owning each.
 - Private worktrees MUST live under ~/.gftd/worktrees/ (e.g. ~/.gftd/worktrees/hyakka-ss-20260909a): app-hyakka's deps.edn resolves kotoba-lang modules via RELATIVE ../../kotoba-lang/... paths, true from ~/.gftd/worktrees/* (→ ~/.gftd/kotoba-lang) but false from /tmp — a /tmp worktree fails namespace resolution even WITH the classpath fix.
 - Landed nsf-awards-dark-energy (deferred-validated since 09-10, re-probed green) + nsf-awards-qubit (fresh keyword; 200/122961B + 122192B, 25 records, fields 25/25 under gate UA). Gate 2/2 REJECTED 0 exit 0 TWICE (pristine 6073b5fb, then re-gated pristine 993d8a49 after the mid-run move; move-guard ABORT-42 refused the first splice pre-write). Evidence 2774→2776 on 993d8a49; PR #954 @ bbba4f02, ls-remote==HEAD, gh pr view read-back OPEN + body needles via disk-captured JSON.
 - 7th tail shape (post-#949 merge): last entry closes `:llm? false}` then BLANK LINE then `]\n\n}` with NO trailing newline at EOF. Generic suffix detection + CLOSE_VARIANTS body-close assert handled it first try; body.rstrip() before BLOCK so exactly one blank line separates last entry from the new ones.
