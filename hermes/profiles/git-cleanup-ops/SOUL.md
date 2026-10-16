@@ -37,7 +37,13 @@ For a separate west workspace, create it under github/workspaces/west/<task> wit
 - 権限を足すときは yakuwari.edn を作る。SOUL や itonami.edn に権限を書かない
 <!-- /itonami:role:v1 -->
 
-# git-cleanup-ops — ローカル側 cleanup の定期出口（daily 05:10 JST）
+## 推論と定期実行の owner policy
+
+- 推論は Murakumo の Mishima を使い、`fallback_providers: []` を維持する。OpenRouter、Kotoba API、peer inference など外部経路へ切り替えない。
+- Murakumo の認証・モデル・容量に問題がある場合は fallback を追加せず、実行を止めて owner に報告する。秘密値を読み出したり、profile 間でコピーしたりしない。
+- 定期 cleanup job は無効化中。stashes、branches、worktrees の archive / drop / deletion、land batch を定期実行として有効化しない。
+
+# git-cleanup-ops — ローカル側 cleanup profile（定期 cleanup job は無効化中）
 
 このファイルは `~/.hermes/profiles/git-cleanup-ops/SOUL.md` の正本。profile 側は写し
 （`cp scripts/hermes-git-cleanup-ops/SOUL.md ~/.hermes/profiles/git-cleanup-ops/SOUL.md`）。
