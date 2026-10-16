@@ -1,17 +1,17 @@
 {
   "jobs": [
     {
-      "base_url": null,
+      "base_url": "https://api.murakumo.cloud/v1",
       "context_from": null,
       "deliver": "bot-chat:seiri",
       "enabled": true,
       "enabled_toolsets": null,
       "id": "29cfd33c0076",
-      "model": "z-ai/glm-5.3-flash",
+      "model": "mishima",
       "name": "seiri-weekly-audit",
       "no_agent": false,
       "prompt": "superproject (~/.itonami-fleet/worktrees と ~/github/com-junkawasaki/root) の棚卸し (seiri 担当)。単一 run で次を実行し報告: 1) worktree 棚卸し: ~/.itonami-fleet/worktrees/ の各 worktree で git branch --show-current + git status --short — detached HEAD と dirty worktree を検出。 2) branch 棚卸し: ~/github/com-junkawasaki/root の git branch 一覧、merged 済み branch の検出。 3) stash 棚卸し: git stash list。 4) 出力: 表形式 30 行以内。駄目な worktree/branch/stash の 1 行サマリ + 上位 5 件までの対処提案。捏造ゼロ — 実測できない値は unknown と書く。変化が無ければ正確に [SILENT] のみ。",
-      "provider": "openrouter-free",
+      "provider": "murakumo",
       "schedule": {
         "kind": "cron",
         "expr": "31 6 * * 1",
@@ -26,7 +26,7 @@
       "base_url": null,
       "context_from": null,
       "deliver": "all",
-      "enabled": true,
+      "enabled": false,
       "enabled_toolsets": null,
       "id": "312f602e1569",
       "model": "z-ai/glm-5.3-flash",
@@ -48,7 +48,7 @@
       "base_url": null,
       "context_from": null,
       "deliver": "local",
-      "enabled": true,
+      "enabled": false,
       "enabled_toolsets": null,
       "id": "fd305c74846a",
       "model": null,
