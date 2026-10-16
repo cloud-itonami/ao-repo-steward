@@ -278,4 +278,3 @@ mirror zone からの発展形。owner 指示「bytes plane は yataverse.com �
   回し、test は gateway_test に fake-fetch で apex を直接叩く形（`worker/route` に
   `https://yataverse.com<path>` の Request）で pin する — host を apex にしないと
   「operator host 404 に落ちた」regression を検出できない。
-

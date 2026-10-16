@@ -259,6 +259,3 @@
 - Land cycle: main moved 4c8316fa→20232c0b→67b1cdc8→adb3b98d between bootstrap/gate/land; one-shot land cycle-loop handled it, landed first cycle after the last move at adb3b98d. Gate 10/10 exit 0 (byte sizes == own curl fetches 10/10); evidence 2739 base → 2749 branch (+10 exact) exit 0, per-id greps 2x each; commit 3b6a5afc config-only numstat 62/1 (minus line = benign re-aligned top-level `}` under the bare-] shape — do NOT hardcode 61/0 for this shape, assert the minus line is `}`); ls-remote==HEAD; PR #946 OPEN MERGEABLE/CLEAN; body read-back 10/10 ids + GATE_EXIT=0 + 2749.
 - Recovable-abort chain held again: land rc3'd on the 61/0 numstat AFTER commit — recovery script (verify HEAD/branch/parent==origin/main, committed-tail geometry, evidence, push, PR create) completed the landing without re-splicing. Self-inflicted recov bug: asserted `ne[-2]==''` on a blank-FILTERED list — never assert blank lines on a blank-stripped list; strip() compare instead.
 - Next run: residue-first Q8514 desert 219 + Q11035 telephone 218 (RE-GREP live config — #934 dropped-map suspect) + paintings Q12418/Q45585 (146/76), then walk tmp-sl-ranked-20260909-d.json from rank 1501. Ranking tail cuts at 176 — fresh discovery query due within ~1-2 runs.
-
-
-

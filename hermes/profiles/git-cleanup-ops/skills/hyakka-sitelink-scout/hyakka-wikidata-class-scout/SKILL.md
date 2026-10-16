@@ -22,7 +22,7 @@ does not: failure modes hit in real runs.
   conflict). Assert no duplicate def names after. Commit the repair SEPARATELY
   from the config addition.
 - **nbb script files must be ClojureScript** (`nbb script.cljs`), not JS. No
-  `slurp`, no `clojure.java.io`, no `System/exit`. Use `(js/require "fs")` + 
+  `slurp`, no `clojure.java.io`, no `System/exit`. Use `(js/require "fs")` +
   `(.readFileSync fs path "utf8")`, exit with `(js/process.exit n)`.
 - **Orphaned tail recurs per-bot**: 09-05 main again carried a standalone ']}' mid-file
   (sitelink-scout batch Q37..Q902 sat OUTSIDE the closed map; evidence said 660 while
