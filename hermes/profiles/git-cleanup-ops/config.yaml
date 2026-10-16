@@ -65,7 +65,7 @@ model:
   provider: murakumo
   base_url: https://api.murakumo.cloud/v1
   default: mishima
-  max_tokens: 8192
+  max_tokens: 1024
   context_length: 131072
 plugins:
   enabled: []
@@ -85,12 +85,10 @@ web:
 cron:
   bot_chat_delivery_timeout_seconds: 900
   max_parallel_jobs: 12
-gateway:
-  cron_only: true
 mcp_servers:
   github-forest:
     command: /opt/homebrew/bin/node
     args:
-    - ~/github/com-junkawasaki/west-manifest/scripts/forest-maintenance.mjs
+    - ${userHome}/github/com-junkawasaki/west-manifest/scripts/forest-maintenance.mjs
     - mcp
     lazy: true
