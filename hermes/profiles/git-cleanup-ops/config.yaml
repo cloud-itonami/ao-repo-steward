@@ -64,6 +64,7 @@ image_gen:
 model:
   provider: murakumo
   base_url: https://api.murakumo.cloud/v1
+  key_env: CUSTOM_PROVIDER_MURAKUMO_KEY
   default: mishima
   max_tokens: 1024
   context_length: 131072
