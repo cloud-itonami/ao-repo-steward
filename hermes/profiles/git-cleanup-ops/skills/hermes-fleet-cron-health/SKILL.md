@@ -39,7 +39,7 @@ When the user reports a Hermes desktop or profile error, do NOT assume your file
 
 ## Provider switch on a 401 wave (executed 2026-09-16, 29 profiles)
 
-When a fleet-wide `HTTP 401: Invalid credential` wave hits profiles whose `.env` carries the key (value stale, not missing — existence check passes), switch those profiles to a working provider end-to-end in one scripted pass: `providers.kotoba` (base_url https://api.kotoba.cloud/v1, key_env KOTOBA_API_TOKEN) + `model.default` + `fallback_providers` + every `auxiliary.*` endpoint, then copy the working token into each profile's `.env` (backup `<file>.bak-<stamp>` first). Verify per-profile by re-parsing (provider+model+token present), then re-fire enabled jobs with `HERMES_HOME=<profile> hermes cron run <id> --accept-hooks`.
+When a fleet-wide `HTTP 401: Invalid credential` wave occurs, inspect provider names, `key_env` names, and credential-presence metadata without reading or copying secret values. Keep inference on Murakumo/Mishima and `fallback_providers: []`; if the configured key is missing or invalid, stop and ask the owner to repair it through the approved secret store. Do not switch providers, copy tokens between profile `.env` files, or refire disabled jobs.
 
 ## Fleet switch to self-owned kotoba endpoint
 
@@ -50,7 +50,7 @@ Three job classes need different treatment on a model switch:
 2. **Pin-less jobs** (provider/model `None`) run on their CREATION-time snapshot (`provider_snapshot`/`model_snapshot`), NOT the current profile config — a config-only switch leaves them on the old model, and the provider rejects it at fire time. Fix with `hermes cron resnap <id>` (adopts the current global default, stays unpinned and tracks future changes). Detect them by `provider is None and model_snapshot not in (None, '<new model>')`.
 3. **Never switch**: multimodal/vision jobs (kotoba endpoint rejects image content arrays) — leave on the vision-capable fallback.
 
-**The fallback chain masks a broken primary.** When the primary provider 400s (`'<old-model>' is not a valid model`), the run silently falls to `fallback_providers` (openrouter-free glm), so agent.log shows the fallback model while the switch looks applied. The same masking happens with TRANSIENT primary failures: after a fleet switch, glm calls in agent.log can be the endpoint's one-off timeout/5xx followed by `API call failed ... Retrying` then a glm success in the same conversation — this is the fallback working as designed, NOT stale cron state. Before declaring success, grep agent.log for the failure line BEFORE the first API call; the log line `running on creation-snapshot provider 'custom' (global default is now 'X'); hermes cron resnap ... adopts the new default` is the tell for class 2. Distinguish the two by checking jobs.json: if every job's provider/model/base_url is already the new route, remaining glm calls are transient fallback; only stale snapshot lines mean class 2 work remains.
+**There is no fallback chain under the current owner policy.** Keep `fallback_providers: []`. If the Murakumo/Mishima route returns a model, capacity, or transient error, inspect logs for diagnosis, then stop and report; do not configure another provider or infer a successful fallback.
 
 Verify a switch with ONE manual `hermes cron run <id> --accept-hooks` and read the profile's `logs/agent.log` for `model=... provider=...` on the first API call; execution rows land in `cron/executions.db` as `running`. Re-audit post-switch executions from executions.db since the switch timestamp (completed/failed/running) rather than trusting jobs.json last_status, which still shows pre-switch errors.
 
@@ -58,8 +58,8 @@ When spawning `hermes` from the Python kernel, use the full venv path (`~/.herme
 
 ## Profile model-section auth and budget pitfalls
 
-- A profile `config.yaml` whose `model:` section carries `provider` + `base_url` but no `key_env` sends requests WITHOUT an Authorization header — HTTP 401 "Missing Authentication header" even when the token sits in `.env` and `providers.<name>` is complete. Fix: put `key_env: <VAR>` beside `base_url` in the `model:` section itself, then re-fire. Also seed every fallback provider's key into the same `.env` (fallback 401 on the quota day is what turns one 429 into a total tick failure).
-- An agent-type cron job with no `run_budget_seconds` will, on a day when primary quota exhaustion forces the weak fallback model, thrash for 75+ minutes / 240+ API calls across cross-repo searches and end `failed` with zero landings. Set an explicit run budget on every migration/land-style agent job (the utsushi bot's 1200s is the proven floor for worktree+verify+land); when triaging a long-running tick, check agent.log API-call count and /tmp artifact count — that is the drift signature.
+- A profile `config.yaml` whose `model:` section carries `provider` + `base_url` must also carry the matching `key_env` in `model:` and the Murakumo provider entry. Check that the configured variable exists without reading its value. Keep Murakumo/Mishima and `fallback_providers: []`; credential repair belongs to the owner-approved secret store, never copying secrets between profiles.
+- An agent-type cron job with no `run_budget_seconds` can run too long; set a bounded budget consistent with the job. Do not use quota exhaustion as a reason to switch to a weaker or external fallback model. Stop and report when Murakumo cannot serve the configured Mishima request.
 
 ## Quota budget before a mass re-fire
 
