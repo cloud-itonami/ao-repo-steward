@@ -424,7 +424,7 @@ a python splice script in worktree scripts/ with an exact multi-line anchor
 
 1. Create private worktree off the verified origin/main SHA, branch bot/source-scout-YYYYMMDD-HHMM there.
 2. Edit config :sources (append, keep comment style); add ids.
-3. `nbb --classpath src scripts/wiki_growth_evidence.cljs --root . --offline`
+3. `nbb --classpath src scripts/wiki_growth_evidence.cljk --root . --offline`
    must exit 0.
 4. Commit (config file only), push, `git ls-remote origin refs/heads/<branch>`
    must equal local HEAD BEFORE `gh pr create`.
