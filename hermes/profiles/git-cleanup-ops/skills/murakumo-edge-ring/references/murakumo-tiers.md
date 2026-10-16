@@ -17,8 +17,7 @@ prefill を混ぜるので prompt 依存 — どちらの端点も正直に測�
   変わる。
 - dan 実測インベントリ: gemma-4 cache 3.3GB（prune 対象・DEFAULT_MODEL を
   変えるか murakumo-serve を退役させる）、comfyui 23GB（画像 ring・残す）、
-  ollama は不在。/tmp の検証用 safetensors は検証後削除（GB 級の輸送を
-  /tmp に残さない）。
+  ollama は不在。検証 artifacts は `~/github/workspaces/<agent-or-bot>/<task>` 配下に置き、owner policy に従って保全または整理する。
 
 ## tier → model mapping（owner 方針確定済み）
 
@@ -38,8 +37,8 @@ prefill を混ぜるので prompt 依存 — どちらの端点も正直に測�
 - decode 40.8 tok/s（server timings、wall 13.2s — queue+prefill 込み）、tool call OK（finish=tool_calls）。**reasoning-first**: `reasoning_content` を吐いてから content — 小さい max_tokens だと全部 reasoning に食われて content が空。token_limits は maxOutputTokens 1024。
 - 「Ling-3.0-mini」なるモデルは murakumo registry / OpenRouter / HF のどこにも存在しない（実測）。旧世代は Ling-mini-2.0（6600h disk のみ、node は offline）。新規 model id を murakumo に足す前に `/infer/models/<id>` で在り処を確認する。
 - KV PUT（operator token、box 上で Bearer 使用・平文転送しない）で descriptor を live catalog に先行表示できる — worker.js refresh 待ちの間の interim ship 経路。JVM 依存しない owner 制約下では、refresh が止まっている間これが catalog 面 (④) の唯一の ship 経路だが、/v1/models (②) と admission (③) は bundle 依存のまま — 全 caller を救うには値を env/KV 由来の JS 面に移す構造変更（refresh-free deploy）が本命。
-- **Hermes profile の fallback に usagi を使う条件**: fallback を ling-3.0-tiny にすると agent.log に「Auxiliary auto-detect: using main provider murakumo (ling-3.0-tiny)」が出て実際に選ばれる。⚠ **window を超える session は「Context length exceeded」で死ぬ**（実測: 14,352 token の aux session vs 8192 window）— scout/crawl 系（小 session）は適合、compression/aux や長文 crawl は usagi に寄せない。rollout は job 単位で workload fit を見て選ぶ。失敗したら fallback を元に戻す。fallback 変更は hand-edit せず `HERMES_HOME=<profile> hermes config set fallback_providers '<edn>'`（hermes binary は venv 内 — bare `hermes` は PATH に無い）。`hermes cron run <id> --accept-hooks` は dispatch で返らず job 完了まで block する — 進行は agent.log の `model=` 行と jobs.json の last_status で読む。
-- **node の窓を上げても caller は 3 段階で別々に死ぬ**（窓引き上げの完了条件を広げる）: gateway 3 面（worker.cljk model-context-windows / model_token_limits.js DEFAULTS / model_registry.cljk seed の `:context`）が node の `-c` より小さいと、① Hermes init gate（/v1/models の context_window < 64k なら落ちる）→ ② auxiliary gate（compression も主 model と別々に走る）→ ③ 実 request の 400（admission が character-class 推定で旧窓を拒む）の順に露出する。**node probe 通過だけでは終わりでない**。窓値の正は node unit の `--ctx-size` のみで、gateway 2 面 + KV descriptor + Hermes cache は写し — 1 正 6 写しの伝播規則と乖離監視（fleet-model-watch の usagi_window 検査）は root ADR-2609131642。明示宣言する Hermes profile は `model.context_length` と `auxiliary.compression.context_length` の **2 箇所**、加えて `<profile>/context_length_cache.yaml` が server 報告値を cache する（key `<model>@<base_url>`）— **server 値を上げたら cache file を消してから再検証する**。検証の完了条件は scratch profile（`.env` に MURAKUMO_API_KEY を複写、`HERMES_HOME=<profile> <venv>/bin/hermes chat -q ...`）での実走 — 裸 curl の 200 は init gate を通らない。
+- **Historical Hermes fallback measurements only**: the 14,352-token auxiliary request exceeded the measured 8,192-token context. Do not configure `usagi` or another fallback under current policy. Keep Murakumo/Mishima with `fallback_providers: []`; if the workload exceeds the configured capacity, stop and report.
+- **node の窓を上げても caller は 3 段階で別々に死ぬ**（窓引き上げの完了条件を広げる）: gateway 3 面（worker.cljk model-context-windows / model_token_limits.js DEFAULTS / model_registry.cljk seed の `:context`）が node の `-c` より小さいと、① Hermes init gate（/v1/models の context_window < 64k なら落ちる）→ ② auxiliary gate（compression も主 model と別々に走る）→ ③ 実 request の 400（admission が character-class 推定で旧窓を拒む）の順に露出する。**node probe 通過だけでは終わりでない**。窓値の正は node unit の `--ctx-size` のみで、gateway 2 面 + KV descriptor + Hermes cache は写し — 1 正 6 写しの伝播規則と乖離監視（fleet-model-watch の usagi_window 検査）は root ADR-2609131642。明示宣言する Hermes profile は `model.context_length` と `auxiliary.compression.context_length` の **2 箇所**、加えて `<profile>/context_length_cache.yaml` が server 報告値を cache する（key `<model>@<base_url>`）— **server 値を上げたら cache file を消してから再検証する**。検証の完了条件は owner-approved isolated profile での実走。秘密値を `.env` へ複写せず、承認済み secret-store 経路だけを使う — 裸 curl の 200 は init gate を通らない。
 - **probe と 400 本文の数値の読み方**: needle probe が旧窓を超えたかの判定は**応答 `usage.prompt_tokens` で行う**（filler の bytes/3.3 推定は実測より ~9% 低く出て、旧窓超えを取りこぼす — 実測: est 20,019 → actual 20,936）。gateway admission 400 の "reserves N input tokens (character-class estimate)" は Hermes の実 token 数の **~2.8 倍**を出す（JSON 全体への文字種推定）— この N を session サイズとして読まない。どちらも「推定で打たず、実測 usage で判定する」が本体。
 
 ## main pool（murakumo-main）— 3 head
@@ -99,7 +98,7 @@ repo は superproject 内 `orgs/network-awai/cloud-murakumo-api`。routing core
 は `src/local_murakumo/worker.cljk`。worktree と branch 操作は **repo 自身から**
 行う（superproject 側からは remote 名付き参照が解決しない）。
 
-1. worktree: `git worktree add -b jk/<topic> /tmp/wt-<topic> network-awai/main`（remote 名付き参照。この repo に `origin` は無い）。初回は repo 内で `git fetch network-awai main`。
+1. worktree: `git worktree add -b jk/<topic> ~/github/wt/<agent-or-bot>/<task> network-awai/main`（remote 名付き参照。この repo に `origin` は無い）。初回は repo 内で `git fetch network-awai main`。
 2. `src/murakumo_tier_aliases.js`（純 rewrite table。**未着地 — 新規作成**）に alias を追加。
 3. `src/worker_entry.js`: azure rewrite の直後・**`applyModelTokenBudget` の直前**に 1 箇所だけ `request = await rewriteTierAliases(request);`（import も追加）。budget が body.model で token policy を引くため、budget より後だと alias が UNKNOWN default に落ちる。この 1 箇所の上流 rewrite で chat/completions・messages・responses 全分岐と budget・admission・gad 短絡判定が解決後の id で通る。
 4. `src/model_token_limits.js` DEFAULTS に concrete id 行。
