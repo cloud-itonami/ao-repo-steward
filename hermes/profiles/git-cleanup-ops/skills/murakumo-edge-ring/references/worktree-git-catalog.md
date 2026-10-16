@@ -2,7 +2,7 @@
 
 ## worktree 操作は repo 自身から行う
 
-`git worktree add -b jk/<topic> /tmp/wt-<topic> network-awai/main` のような
+`git worktree add -b jk/<topic> ~/github/wt/<agent-or-bot>/<task>
 remote 名付き参照は **superproject 側からは解決しない**（remote 設定は子 repo
 のもの）。初回は子 repo 内で `git fetch network-awai main` してから worktree を
 切る。この repo に `origin` は無い。
