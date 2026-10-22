@@ -18,7 +18,7 @@ Appends one JSON line per run to <profile>/workspace/cljk-finish-ledger.jsonl.
 """
 import os, sys, json, glob, time, re, subprocess
 
-ROOT = "~/github/com-junkawasaki"
+ROOT = os.path.expanduser("~/github/com-junkawasaki")
 PROFILE = os.path.expanduser("~/.hermes/profiles/cljk-finish")
 LEDGER = os.path.join(PROFILE, "workspace", "cljk-finish-ledger.jsonl")
 PRUNE = {"node_modules", ".git", ".nbb", "target", "dist", "build"}
